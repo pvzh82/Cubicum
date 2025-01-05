@@ -1,3 +1,0 @@
-/home/pvzh82/game1/build/CMakeFiles/my_minecraft_clone.dir
-/home/pvzh82/game1/build/CMakeFiles/edit_cache.dir
-/home/pvzh82/game1/build/CMakeFiles/rebuild_cache.dir
