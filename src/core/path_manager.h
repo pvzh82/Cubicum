@@ -4,8 +4,8 @@
 #include <string>
 #include <filesystem>
 
-class PathManager
-{
+class PathManager {
+
 public:
     static std::string getShaderPath(const std::string& shaderName);
     static std::string getTexturePath(const std::string& textureName);
