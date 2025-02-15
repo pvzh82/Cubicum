@@ -1,4 +1,4 @@
 .vscode/
 build/
 bin/
-.gitignore/
+.clang-format

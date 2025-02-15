@@ -7,12 +7,12 @@ set(OpenGL_GL_PREFERENCE "GLVND")
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 
-
 # Definir los archivos fuente
 set(SOURCE_FILES
     src/core/main.cpp
     src/core/path_manager.cpp
     src/core/shader.cpp
+    src/render/camera.cpp
     include/glad/glad.c
 )
 
@@ -21,9 +21,14 @@ add_executable(test ${SOURCE_FILES})
 
 # Incluir directorios de cabeceras
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
+target_include_directories(test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(test PRIVATE glfw OpenGL::GL)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") #-Wall  -Wextra -Werror
+
+# Add stb_image header-only library
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/stb_image)
 
 set_target_properties(test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin
