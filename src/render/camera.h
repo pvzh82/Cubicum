@@ -7,7 +7,7 @@
 class Camera {
  public:
   // main enum
-  enum Camera_Movement { FORWARD, BACKWARD, LEFT, RIGHT };
+  enum Camera_Movement { FORWARD, BACKWARD, LEFT, RIGHT, UP, DOWN };
 
   // const declaration
   static const float YAW;

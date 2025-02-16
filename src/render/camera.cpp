@@ -6,7 +6,7 @@
 // init constants
 const float Camera::YAW = -90.0f;
 const float Camera::PITCH = 0.0f;
-const float Camera::SPEED = 0.1f;
+const float Camera::SPEED = 0.4f / 10;
 const float Camera::SENSITIVITY = 0.1f;
 const float Camera::ZOOM = 45.0f;
 
@@ -55,6 +55,11 @@ void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime) {
     Position -= Right * velocity;
   if (direction == RIGHT)
     Position += Right * velocity;
+  
+  if (direction == UP)
+    Position += WorldUp * velocity;
+  if (direction == DOWN)
+    Position -= WorldUp * velocity;
 }
 
 void Camera::ProcessMouseMovement(float xoffset,

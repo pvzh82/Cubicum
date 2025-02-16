@@ -7,11 +7,11 @@
 #include <glm/glm.hpp>
 #include <string>
 
-class shader {
+class Shader {
  public:
   unsigned int shaderID;
 
-  shader(const char* vertexSource, const char* fragmentSource);
+  Shader(const char* vertexSource, const char* fragmentSource);
 
   void useShader();
 
