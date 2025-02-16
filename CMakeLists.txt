@@ -17,6 +17,8 @@ set(SOURCE_FILES
     src/render/camera.cpp
     include/glad/glad.c
     src/render/chunk.cpp
+    src/render/world.cpp
+    src/render/perlinNoise.cpp
 )
 
 

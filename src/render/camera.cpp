@@ -6,7 +6,7 @@
 // init constants
 const float Camera::YAW = -90.0f;
 const float Camera::PITCH = 0.0f;
-const float Camera::SPEED = 0.4f / 10;
+const float Camera::SPEED = 0.3f / 10;
 const float Camera::SENSITIVITY = 0.1f;
 const float Camera::ZOOM = 45.0f;
 

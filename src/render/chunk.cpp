@@ -2,16 +2,32 @@
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <chrono>
 #include <iostream>
 #include <vector>
 
-Chunk::Chunk(unsigned int chunkWidth, unsigned int chunkHeight)
-    : chunkWidth(chunkWidth), chunkHeight(chunkHeight) {
+Chunk::Chunk(unsigned int chunkWidth,
+             unsigned int chunkHeight,
+             const std::vector<unsigned int>& chunkData,
+             const glm::vec3& position)
+    : chunkWidth(chunkWidth),
+      chunkHeight(chunkHeight),
+      position(position),
+      chunkData(chunkData) {
   blocks.resize(chunkWidth,
                 std::vector<std::vector<bool>>(
                     chunkHeight, std::vector<bool>(chunkWidth, false)));
+
+  for (int x = 0; x < chunkWidth; x++) {
+    for (int y = 0; y < chunkHeight; y++) {
+      for (int z = 0; z < chunkWidth; z++) {
+        int index = x + y * chunkWidth + z * chunkWidth * chunkHeight;
+        blocks[x][y][z] = (chunkData[index] != 0);
+      }
+    }
+  }
   GenerateChunkTerrain();
 }
 
@@ -82,8 +98,8 @@ void Chunk::AddFace(int x,
                     int z,
                     glm::vec3 normal,
                     unsigned int& indexOffset) {
-  float size = 1.0f; //block size
-  //face positions
+  float size = 1.0f;  // block size
+  // face positions
   glm::vec3 v1(x - size / 2, y - size / 2, z - size / 2);
   glm::vec3 v2(x + size / 2, y - size / 2, z - size / 2);
   glm::vec3 v3(x + size / 2, y + size / 2, z - size / 2);
@@ -219,7 +235,7 @@ void Chunk::SetupBuffers() {
   glBindVertexArray(0);
 }
 
-void Chunk::Render() {
+void Chunk::Render(const glm::mat4& modelMatrix) {
   glBindVertexArray(vao);
   glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);

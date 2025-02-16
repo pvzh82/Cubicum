@@ -14,7 +14,7 @@
 #include <iostream>
 
 #include "../render/camera.h"
-#include "../render/chunk.h"
+#include "../render/world.h"
 #include "path_manager.h"
 #include "shader.h"
 
@@ -29,7 +29,7 @@ void processInput(GLFWwindow* window);
 int width = 1920, height = 1080;
 
 // comera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 50.0f, 50.0f));
 float lastX = width / 2.0f;
 float lastY = height / 2.0f;
 bool firstMouse = true;
@@ -80,9 +80,8 @@ int main() {
   Shader shader(vertexShaderPath.c_str(), fragmentShaderPath.c_str());
   shader.useShader();
 
-  // init Chunk
-  Chunk chunk(16, 64);
-  chunk.GenerateChunkTerrain();
+  // init world
+  World world;
 
   // texture time!
   unsigned int texture;
@@ -151,14 +150,11 @@ int main() {
     glm::mat4 view = camera.GetViewMatrix();
     shader.setMat4("view", view);
 
-    // render chunk
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(
-        model,
-        glm::vec3(-2.0f, -1.0f, -5.0f));  // Adjusted position closer to camera
-    shader.setMat4("model", model);
+    // update world
+    world.Update(camera.Position.x, camera.Position.y, camera.Position.z, 0);
 
-    chunk.Render();
+    // render world
+    world.Render(shader);
 
     // call events and swap buffers
     glfwSwapBuffers(window);
