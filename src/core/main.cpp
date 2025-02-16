@@ -9,9 +9,9 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <cmath>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
-#include <cstdlib>
 
 #include "../render/camera.h"
 #include "../render/chunk.h"
@@ -81,7 +81,7 @@ int main() {
   shader.useShader();
 
   // init Chunk
-  Chunk chunk(16);
+  Chunk chunk(16, 64);
   chunk.GenerateChunkTerrain();
 
   // texture time!
@@ -113,7 +113,7 @@ int main() {
 
   glEnable(GL_DEPTH_TEST);
 
-  //fps
+  // fps
   double lastTime = glfwGetTime();
   int frameCount = 0;
 
@@ -122,16 +122,14 @@ int main() {
     float currentFrame = static_cast<float>(glfwGetTime());
     deltaTime = currentFrame - lastFrame;
 
-    //checkfps
+    // checkfps
     double currentTime = glfwGetTime();
     frameCount++;
-    if (currentTime - lastTime >= 1.0f)
-    {
-      std::cout << "FPS: " <<frameCount << "\n";
+    if (currentTime - lastTime >= 1.0f) {
+      std::cout << "FPS: " << frameCount << "\n";
       frameCount = 0;
-      lastTime  = currentTime;
+      lastTime = currentTime;
     }
-    
 
     // input
     processInput(window);
@@ -155,9 +153,10 @@ int main() {
 
     // render chunk
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-2.0f, -1.0f, -5.0f)); // Adjusted position closer to camera
+    model = glm::translate(
+        model,
+        glm::vec3(-2.0f, -1.0f, -5.0f));  // Adjusted position closer to camera
     shader.setMat4("model", model);
-
 
     chunk.Render();
 
