@@ -29,6 +29,7 @@ Chunk::Chunk(unsigned int chunkWidth,
     }
   }
   GenerateChunkTerrain();
+  SetupBuffers();
 }
 
 Chunk::~Chunk() {
