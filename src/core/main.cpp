@@ -84,10 +84,12 @@ int main() {
   World world;
 
   // texture time!
-  unsigned int texture;
+  unsigned int texture = 0;
   glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  std::cout << "Generated texture ID: " << texture << "\n";
+
   glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture);
 
   // set texture parameters
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -96,27 +98,38 @@ int main() {
 
   // load and generate
   int texwidth, texheight, nrChannels;
-  std::string grassBlockPath = PathManager::getTexturePath("dirt.png");
+  std::string grassBlockPath = PathManager::getTexturePath("grass.png");
+  std::cout << "Loading texture from: " << grassBlockPath << "\n";
 
   unsigned char* data =
       stbi_load(grassBlockPath.c_str(), &texwidth, &texheight, &nrChannels, 0);
   if (data) {
+    std::cout << "Texture loaded successfully: " << texwidth << "x" << texheight
+              << "\n";
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texwidth, texheight, 0, GL_RGB,
                  GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
   } else {
-    std::cout << "couldnt load texture :c" << std::endl;
+    std::cout << "couldnt load texture :c - using white default\n";
+    // Create a simple 1x1 white texture as fallback
+    unsigned char white[] = {255, 255, 255};
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE,
+                 white);
   }
 
-  stbi_image_free(data);
+  std::cout << "Texture setup complete\n";
 
   glEnable(GL_DEPTH_TEST);
+
+  std::cout << "About to enter main loop...\n";
 
   // fps
   double lastTime = glfwGetTime();
   int frameCount = 0;
 
   // main loop
+  std::cout << "Entering main loop\n";
   while (!glfwWindowShouldClose(window)) {
     float currentFrame = static_cast<float>(glfwGetTime());
     deltaTime = currentFrame - lastFrame;
@@ -132,11 +145,13 @@ int main() {
 
     // input
     processInput(window);
+
     // rendering stuff
     glClearColor(0.455f, 0.701f, 1.0f, 0.8f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glBindTexture(GL_TEXTURE_2D, texture);
+
     // activate shader
     shader.useShader();
     shader.setInt("ourTexture", 0);
@@ -152,6 +167,12 @@ int main() {
 
     // update world
     world.Update(camera.Position.x, camera.Position.y, camera.Position.z, 0);
+    static bool cameraPrinted = false;
+    if (!cameraPrinted) {
+      std::cout << "Camera at: (" << camera.Position.x << ", "
+                << camera.Position.y << ", " << camera.Position.z << ")\n";
+      cameraPrinted = true;
+    }
 
     // render world
     world.Render(shader);

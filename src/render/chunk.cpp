@@ -29,21 +29,25 @@ Chunk::Chunk(unsigned int chunkWidth,
     }
   }
   GenerateChunkTerrain();
-  SetupBuffers();
 }
 
 Chunk::~Chunk() {
-  glDeleteVertexArrays(1, &vao);
-  glDeleteBuffers(1, &vbo);
-  glDeleteBuffers(1, &ebo);
+  if (vao != 0)
+    glDeleteVertexArrays(1, &vao);
+  if (vbo != 0)
+    glDeleteBuffers(1, &vbo);
+  if (ebo != 0)
+    glDeleteBuffers(1, &ebo);
 }
 
 void Chunk::GenerateChunkTerrain() {
   auto start = std::chrono::high_resolution_clock::now();
+  // Use chunkData from constructor (already populated with heightmap values)
   for (int x = 0; x < chunkWidth; x++) {
     for (int y = 0; y < chunkHeight; y++) {
       for (int z = 0; z < chunkWidth; z++) {
-        blocks[x][y][z] = true;
+        int index = x + y * chunkWidth + z * chunkWidth * chunkHeight;
+        blocks[x][y][z] = (chunkData[index] != 0);
       }
     }
   }
@@ -59,6 +63,7 @@ void Chunk::GenerateChunkMesh() {
   vertices.clear();
   indices.clear();
   unsigned int indexOffset = 0;
+
   for (int x = 0; x < chunkWidth; x++) {
     for (int y = 0; y < chunkHeight; y++) {
       for (int z = 0; z < chunkWidth; z++) {
@@ -69,8 +74,8 @@ void Chunk::GenerateChunkMesh() {
         bool bottom = (y == 0) || !blocks[x][y - 1][z];
         bool front = (z == chunkWidth - 1) || !blocks[x][y][z + 1];
         bool back = (z == 0) || !blocks[x][y][z - 1];
-        bool left = (x == chunkWidth - 1) || !blocks[x + 1][y][z];
-        bool right = (x == 0) || !blocks[x - 1][y][z];
+        bool left = (x == 0) || !blocks[x - 1][y][z];
+        bool right = (x == chunkWidth - 1) || !blocks[x + 1][y][z];
 
         if (!top && !bottom && !front && !back && !left && !right) {
           continue;

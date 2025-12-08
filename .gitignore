@@ -2,3 +2,4 @@
 build/
 bin/
 .clang-format
+.qodo

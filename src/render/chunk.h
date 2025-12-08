@@ -15,7 +15,7 @@ class Chunk {
 
   void GenerateChunkTerrain();
   void GenerateChunkMesh();
-  void Render();
+  // void Render();
   void SetupBuffers();
   void AddFace(int x,
                int y,
@@ -30,8 +30,8 @@ class Chunk {
   unsigned int chunkHeight;
   std::vector<std::vector<std::vector<bool>>> blocks;
   std::vector<unsigned int> chunkData;
-  GLuint vao, vbo, ebo;
-  unsigned int numIndices;
+  GLuint vao = 0, vbo = 0, ebo = 0;
+  unsigned int numIndices = 0;
 
   std::vector<float> vertices;
   std::vector<unsigned int> indices;
