@@ -30,6 +30,7 @@ struct PerlinInitializer {
       }
   }
 };
+static PerlinInitializer _init;
 
 double PerlinNoise::noise(double x, double y, double z) {
   int X = (int)(floor(x)) & 255;

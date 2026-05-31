@@ -3,8 +3,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <memory>
 #include <unordered_map>
 
@@ -19,12 +19,11 @@
 #include "stb_image/stb_image.h"
 #include "world.h"
 
-World::World() : chunkSize(16), chunkHeight(96), renderDistance(2) {
-  // Try to load heightmap; fallback to procedural if not found
-  if (!LoadHeightmap("../assets/heightmaps/terrain.png")) {
-    std::cerr
-        << "Warning: Could not load heightmap, using procedural generation\n";
-  }
+World::World() : chunkSize(16), chunkHeight(96), renderDistance(6) {
+  // Procedural generation active — heightmap loading disabled
+  // if (!LoadHeightmap("../assets/heightmaps/terrain.png")) {
+  //   std::cerr << "Warning: Could not load heightmap, using procedural generation\n";
+  // }
 
   std::cout << "Creating chunks with renderDistance=" << renderDistance << "\n";
   int chunkCount = 0;
@@ -43,6 +42,13 @@ World::World() : chunkSize(16), chunkHeight(96), renderDistance(2) {
     }
   }
   std::cout << "Created " << chunkCount << " chunks\n";
+
+  // Rebuild all meshes now that all neighbors exist.
+  for (int x = minCoord; x <= maxCoord; x++) {
+    for (int z = minCoord; z <= maxCoord; z++) {
+      rebuildWithNeighbors(x, z);
+    }
+  }
 }
 
 World::~World() {
@@ -61,35 +67,40 @@ std::vector<unsigned int> World::GenerateChunkData(int chunkX,
   int blockCount = 0;
   float minHeight = 999.0f, maxHeight = -999.0f;
 
-  for (int x = 0; x < chunkSize; x++) {
-    for (int z = 0; z < chunkSize; z++) {
-      float worldX = chunkX * chunkSize + x;
-      float worldZ = chunkZ * chunkSize + z;
-
-      float height;
-      if (heightmapData) {
-        // Sample from loaded heightmap
-        height = SampleHeightmap(worldX, worldZ);
-        if (height < minHeight)
-          minHeight = height;
-        if (height > maxHeight)
-          maxHeight = height;
-      } else {
-        // Fallback: procedural Perlin con varias octavas para montañas
-        static PerlinNoise perlin;
-        float h = 0.0f;
-        float freq = 0.005f;
-        float amp = 40.0f;
-        for (int octave = 0; octave < 4; ++octave) {
-          h += amp * perlin.noise(worldX * freq, worldZ * freq, 0.0f);
-          freq *= 2.0f;
-          amp *= 0.5f;
-        }
-        height = std::clamp(h, 0.0f, static_cast<float>(chunkHeight - 1));
-      }
-
-      for (int y = 0; y < chunkHeight; y++) {
+  // Layout matches Chunk index formula: x + y*W + z*W*H → iterate z outer, y mid, x inner
+  for (int z = 0; z < chunkSize; z++) {
+    for (int y = 0; y < chunkHeight; y++) {
+      for (int x = 0; x < chunkSize; x++) {
+        float worldX = chunkX * chunkSize + x;
+        float worldZ = chunkZ * chunkSize + z;
         float worldY = chunkY * chunkHeight + y;
+
+        float height;
+        if (heightmapData) {
+          height = SampleHeightmap(worldX, worldZ);
+          if (height < minHeight)
+            minHeight = height;
+          if (height > maxHeight)
+            maxHeight = height;
+        } else {
+          static PerlinNoise perlin;
+          float h = 0.0f;
+          float freq = 0.005f;
+          float amp  = 1.0f;
+          float maxAmp = 0.0f;
+          for (int octave = 0; octave < 7; ++octave) {
+            h += amp * perlin.noise(worldX * freq, worldZ * freq, 0.0f);
+            maxAmp += amp;
+            freq *= 2.0f;
+            amp  *= 0.4f;
+          }
+          h /= maxAmp;                   // normalize to [-1, 1]
+          h = (h + 1.0f) * 0.5f;        // remap to [0, 1]
+          // Plains below 0.4, hills/mountains above — tweak first value to taste
+          h = glm::smoothstep(0.35f, 0.75f, h);
+          height = 8.0f + h * 52.0f;
+          height = glm::clamp(height, 0.0f, static_cast<float>(chunkHeight - 1));
+        }
 
         unsigned int blockType = 0;
         if (worldY <= height) {
@@ -213,6 +224,23 @@ float World::SampleHeightmap(float worldX, float worldZ) {
   return height;
 }
 
+// Returns the data array of a neighbor chunk, or nullptr if it doesn't exist.
+const std::vector<unsigned int>* World::getNeighborData(int cx, int cz) const {
+  auto it = chunks.find(std::make_tuple(cx, 0, cz));
+  if (it == chunks.end()) return nullptr;
+  return &it->second->getData();
+}
+
+void World::rebuildWithNeighbors(int cx, int cz) {
+  auto it = chunks.find(std::make_tuple(cx, 0, cz));
+  if (it == chunks.end()) return;
+  it->second->RebuildMesh(
+      getNeighborData(cx - 1, cz),
+      getNeighborData(cx + 1, cz),
+      getNeighborData(cx, cz - 1),
+      getNeighborData(cx, cz + 1));
+}
+
 void World::Render(Shader& shader) {
   for (auto& [key, chunk] : chunks) {
     glm::mat4 model = glm::translate(glm::mat4(1.0f), chunk->position);
@@ -227,16 +255,24 @@ void World::Update(float camX, float camY, float camZ, unsigned int modelLoc) {
   int currentChunkZ = static_cast<int>(
       std::floor(static_cast<double>(camZ) / static_cast<double>(chunkSize)));
 
+  int chunksLoadedThisFrame = 0;
   for (int x = currentChunkX - static_cast<int>(renderDistance);
        x <= currentChunkX + static_cast<int>(renderDistance); x++) {
     for (int z = currentChunkZ - static_cast<int>(renderDistance);
          z <= currentChunkZ + static_cast<int>(renderDistance); z++) {
       std::tuple<int, int, int> key = std::make_tuple(x, 0, z);
       if (chunks.find(key) == chunks.end()) {
+        if (chunksLoadedThisFrame >= 1) continue;  // defer to next frame
         auto chunkData = GenerateChunkData(x, 0, z);
         glm::vec3 position(x * chunkSize, 0, z * chunkSize);
         chunks[key] = std::make_unique<Chunk>(chunkSize, chunkHeight, chunkData,
                                               position);
+        rebuildWithNeighbors(x, z);
+        rebuildWithNeighbors(x - 1, z);
+        rebuildWithNeighbors(x + 1, z);
+        rebuildWithNeighbors(x, z - 1);
+        rebuildWithNeighbors(x, z + 1);
+        chunksLoadedThisFrame++;
       }
     }
   }

@@ -98,7 +98,7 @@ int main() {
 
   // load and generate
   int texwidth, texheight, nrChannels;
-  std::string grassBlockPath = PathManager::getTexturePath("grass.png");
+  std::string grassBlockPath = PathManager::getTexturePath("terrain.png");
   std::cout << "Loading texture from: " << grassBlockPath << "\n";
 
   unsigned char* data =
@@ -106,7 +106,7 @@ int main() {
   if (data) {
     std::cout << "Texture loaded successfully: " << texwidth << "x" << texheight
               << "\n";
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texwidth, texheight, 0, GL_RGB,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texwidth, texheight, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(data);

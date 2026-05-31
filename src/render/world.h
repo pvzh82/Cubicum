@@ -14,14 +14,16 @@
 #include <cstring>
 #include "../core/shader.h"
 #include "chunk.h"
-#include "perlinNoise.h"
 
 struct TupleHash {
   std::size_t operator()(const std::tuple<int, int, int>& key) const {
     auto h1 = std::hash<int>()(std::get<0>(key));
     auto h2 = std::hash<int>()(std::get<1>(key));
     auto h3 = std::hash<int>()(std::get<2>(key));
-    return h1 ^ (h2 << 1) ^ (h3 << 2);
+    std::size_t seed = h1;
+    seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= h3 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    return seed;
   }
 };
 
@@ -53,6 +55,8 @@ class World {
 
   bool LoadHeightmap(const char* path);
   float SampleHeightmap(float worldX, float worldZ);
+  const std::vector<unsigned int>* getNeighborData(int cx, int cz) const;
+  void rebuildWithNeighbors(int cx, int cz);
 
   std::unordered_map<std::tuple<int, int, int>,
                      std::unique_ptr<Chunk>,
